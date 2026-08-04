@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/pratham.dubey/Downloads/main/customer-churn-prediction-main/mlruns/1/models/m-dcaa76e8462d49daba094d3b360d7b80/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.14.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+    skops_trusted_types: null
+mlflow_version: 3.15.1
+model_id: m-dcaa76e8462d49daba094d3b360d7b80
+model_size_bytes: 4399625
+model_uuid: m-dcaa76e8462d49daba094d3b360d7b80
+prompts: null
+run_id: 8872f0efca62472c8e23558dfb91e4fa
+utc_time_created: '2026-08-04 05:32:38.620740'
