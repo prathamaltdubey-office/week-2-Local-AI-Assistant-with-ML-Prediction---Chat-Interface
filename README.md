@@ -1,217 +1,585 @@
-# Customer Churn Prediction App
+# 🚀 Production-Ready Customer Churn Prediction Pipeline
+
+> A complete Machine Learning Engineering project demonstrating data preprocessing, model training, hyperparameter tuning, experiment tracking, testing, and deployment using Streamlit.
+
+---
 
 ## 📌 Project Overview
 
-Customer churn is a critical problem for subscription-based businesses, as retaining existing customers is significantly more cost-effective than acquiring new ones.
+Customer churn is one of the biggest challenges faced by subscription-based businesses such as telecom companies.
 
-This project builds an **end-to-end Machine Learning system** to predict customer churn probability using customer demographics, service usage, and billing data.
+This project builds a **production-ready Machine Learning pipeline** that predicts whether a customer is likely to churn based on demographic information, subscribed services, billing information, and customer tenure.
 
-The solution goes beyond just modeling and focuses on the **complete ML lifecycle**, including:
+The project follows **ML Engineering** and **MLOps best practices**, including:
 
-- Exploratory Data Analysis (EDA)
-- Feature engineering & preprocessing
-- Model training and comparison
-- Class imbalance handling
-- Threshold optimization
-- Model explainability using SHAP
-- Deployment with Streamlit
-
-Users can input customer information and receive a **real-time churn probability prediction along with model insights**.
-
----
-
-## 🎥 Live Project Walkthrough
-
-👉 https://www.youtube.com/watch?v=RKXDvzcKWL0
+- Modular project structure
+- Scikit-learn Pipelines
+- Hyperparameter tuning
+- MLflow experiment tracking
+- Unit testing with Pytest
+- Code formatting using Black, Ruff and isort
+- Streamlit deployment
+- Docker support
+- Reproducible workflows
 
 ---
 
-## 🚀 Live Demo
+# 📷 Application Preview
 
-Streamlit App:  
-https://customer-churn-prediction-lr-rf.streamlit.app/
+## Streamlit Home
 
----
+> *(Insert Screenshot Here)*
 
-## 📊 Dataset
-
-This project uses the **Telco Customer Churn Dataset** available on Kaggle.
-
-Dataset Link:  
-https://www.kaggle.com/datasets/blastchar/telco-customer-churn
-
-- **7043 customer records**
-- **21 features**
-
-### Feature Categories:
-
-- Customer demographics (gender, partner, dependents, senior citizen)
-- Account information (tenure, contract type, billing method)
-- Services subscribed (internet, streaming, security, tech support)
-- Billing information (monthly charges, total charges)
-- Target variable: **Churn**
-
-The goal is to build models that **predict customer churn probability** and enable data-driven retention strategies.
+![Streamlit Home](docs/images/streamlit-home.png)
 
 ---
 
-## 🛠 Tech Stack
+## Prediction Result
 
-- Python
-- Pandas, NumPy
-- Scikit-learn
-- XGBoost
-- SHAP
-- Matplotlib
-- Streamlit
-- Joblib
+> *(Insert Screenshot Here)*
+
+![Prediction](docs/images/prediction-result.png)
 
 ---
 
-## ⚙️ Machine Learning Pipeline
+## Model Insights
 
-### 🔹 Numerical Features
+> *(Insert Screenshot Here)*
 
-- Tenure  
-- MonthlyCharges  
-- TotalCharges  
-
-Processing:
-- Missing value imputation
-- Standard scaling
+![Insights](docs/images/model-insights.png)
 
 ---
 
-### 🔹 Categorical Features
+# 📁 Project Structure
+
+```
+customer-churn-prediction-main
+│
+├── app
+│   └── app.py
+│
+├── data
+│   └── Telco_Customer_churn.csv
+│
+├── models
+│   ├── logistic_model.pkl
+│   ├── rf_model.pkl
+│   ├── xgb_model.pkl
+│   ├── best_logistic_model.pkl
+│   ├── best_rf_model.pkl
+│   └── best_xgb_model.pkl
+│
+├── reports
+│   └── model_metrics.csv
+│
+├── src
+│   ├── train.py
+│   ├── tuning.py
+│   └── evaluate.py
+│
+├── tests
+│   ├── conftest.py
+│   └── test_pipeline.py
+│
+├── Dockerfile
+├── pyproject.toml
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+---
+
+# 📊 Dataset
+
+Dataset Used:
+
+**IBM Telco Customer Churn Dataset**
+
+The dataset contains customer information such as:
 
 - Gender
-- Contract type
-- Internet service
-- Payment method
-- Service-related features
+- Senior Citizen
+- Partner
+- Dependents
+- Tenure
+- Phone Service
+- Internet Service
+- Online Security
+- Online Backup
+- Device Protection
+- Tech Support
+- Streaming TV
+- Streaming Movies
+- Contract
+- Paperless Billing
+- Payment Method
+- Monthly Charges
+- Total Charges
 
-Processing:
-- Missing value imputation
-- One-hot encoding
+Target Variable
 
----
+```
+Churn
+```
 
-All preprocessing is handled using a **Scikit-learn ColumnTransformer**, ensuring a clean and reproducible pipeline.
-
----
-
-## 🤖 Models Used
-
-### 🔹 Logistic Regression
-- Baseline interpretable model  
-- High recall → good at identifying churn customers  
-
----
-
-### 🔹 Random Forest
-- Ensemble model  
-- Captures non-linear relationships  
-- Balanced performance across metrics  
-
----
-
-### 🔹 XGBoost
-- Gradient boosting model  
-- Handles class imbalance using `scale_pos_weight`  
-- Strong performance with optimized learning and regularization  
+- Yes
+- No
 
 ---
 
-## 📈 Model Performance
+# 🛠 Technologies Used
 
-| Model | ROC-AUC | F1 Score | Precision | Recall |
-|------|--------|--------|--------|--------|
-| Logistic Regression | 0.86 | 0.64 | 0.52 | 0.84 |
-| Random Forest | 0.85 | 0.65 | 0.56 | 0.78 |
-| XGBoost | 0.85 | 0.63 | 0.55 | 0.75 |
-
----
-
-## ⚖️ Threshold Optimization
-
-Instead of using a default threshold (0.5), different thresholds were evaluated to balance:
-
-- Precision (avoiding false positives)
-- Recall (capturing churn customers)
-
-This allows businesses to **customize risk tolerance based on strategy**.
-
----
-
-## 🔍 Model Explainability (SHAP)
-
-To make the model interpretable, **SHAP (SHapley Additive Explanations)** was used:
-
-- Explains **individual predictions**
-- Identifies **global feature importance**
-- Helps understand **why a customer is likely to churn**
-
-### Key Insights from SHAP:
-
-- 📉 Low tenure → higher churn risk  
-- 📉 Month-to-month contracts → strong churn driver  
-- 📈 Higher monthly charges → increased churn probability  
-- ❌ Lack of services (security, tech support) → higher churn  
+| Technology | Purpose |
+|------------|----------|
+| Python | Programming |
+| Pandas | Data Processing |
+| NumPy | Numerical Operations |
+| Scikit-learn | ML Pipeline |
+| XGBoost | Gradient Boosting |
+| MLflow | Experiment Tracking |
+| Joblib | Model Serialization |
+| Streamlit | Web Application |
+| Matplotlib | Visualization |
+| Pytest | Unit Testing |
+| Ruff | Linting |
+| Black | Formatting |
+| isort | Import Sorting |
+| Docker | Containerization |
 
 ---
 
-## 📊 Key Insights
+# ⚙ Machine Learning Workflow
 
-### 📌 Contract Type
-Customers on **month-to-month contracts** show the highest churn probability.
+```
+Dataset
 
-### 📌 Customer Tenure
-Customers with shorter tenure are significantly more likely to churn.
+        │
 
-### 📌 Monthly Charges
-Higher monthly charges correlate with increased churn.
+        ▼
 
-### 📌 Internet Service Type
-Customers with **fiber optic service** have higher churn rates.
+Data Cleaning
 
-### 📌 Value-added Services
-Customers without:
-- Online Security  
-- Tech Support  
-- Device Protection  
+        │
 
-are more likely to churn.
+        ▼
+
+Feature Engineering
+
+        │
+
+        ▼
+
+Train Test Split
+
+        │
+
+        ▼
+
+Preprocessing Pipeline
+
+        │
+
+        ▼
+
+Train 3 ML Models
+
+        │
+
+        ▼
+
+Hyperparameter Tuning
+
+        │
+
+        ▼
+
+Model Evaluation
+
+        │
+
+        ▼
+
+MLflow Logging
+
+        │
+
+        ▼
+
+Save Best Models
+
+        │
+
+        ▼
+
+Streamlit Deployment
+```
 
 ---
 
-## 💡 Business Recommendations
+# 🧹 Data Preprocessing
 
-Based on the model insights:
+The preprocessing pipeline performs:
 
-- Encourage **long-term contracts** via incentives  
-- Offer **bundled services** to improve retention  
-- Provide **targeted offers to high-paying customers**  
-- Focus retention strategies on **new customers with low tenure**  
+- Removal of customerID
+- Conversion of TotalCharges to numeric
+- Missing value handling
+- Label Encoding of target
+- One Hot Encoding for categorical variables
+- Standard Scaling for numerical variables
+
+Implemented using
+
+```
+ColumnTransformer
+```
+
+and
+
+```
+Pipeline
+```
+
+from Scikit-learn.
 
 ---
 
-## 🌐 Deployment
+# 🤖 Models Trained
 
-The model is deployed using **Streamlit**, allowing users to:
+Three supervised learning models were trained.
 
-- Input customer data  
-- Get churn probability instantly  
-- View model explanations using SHAP  
+## Logistic Regression
+
+Advantages
+
+- Simple
+- Fast
+- Interpretable
 
 ---
 
-## 📌 Conclusion
+## Random Forest
 
-This project demonstrates how to build a **production-ready ML solution** that combines:
+Advantages
 
-- Predictive modeling  
-- Business understanding  
-- Explainability  
-- Deployment  
+- Ensemble learning
+- Handles nonlinear relationships
+- Robust against overfitting
 
-It highlights the importance of going beyond modeling to deliver **actionable business insights**.
+---
+
+## XGBoost
+
+Advantages
+
+- Gradient Boosting
+- High predictive performance
+- Efficient training
+
+---
+
+# 🔍 Hyperparameter Tuning
+
+RandomizedSearchCV was used for tuning.
+
+Optimized Parameters included:
+
+### Logistic Regression
+
+- C
+- Solver
+- Penalty
+
+### Random Forest
+
+- Number of Trees
+- Maximum Depth
+- Minimum Samples Split
+- Minimum Samples Leaf
+
+### XGBoost
+
+- Learning Rate
+- Number of Trees
+- Maximum Depth
+- Subsample
+
+---
+
+# 📈 Model Evaluation
+
+Models were evaluated using:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- ROC-AUC
+
+Example Metrics
+
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|--------|-----------|-----------|--------|-----|---------|
+| Logistic Regression | *(Your Result)* | | | | |
+| Random Forest | *(Your Result)* | | | | |
+| XGBoost | *(Your Result)* | | | | |
+
+---
+
+# 📊 MLflow Experiment Tracking
+
+Each experiment logs:
+
+- Parameters
+- Metrics
+- Best Model
+- Artifacts
+
+### MLflow Dashboard
+
+> *(Insert Screenshot Here)*
+
+![MLflow](docs/images/mlflow-dashboard.png)
+
+---
+
+### MLflow Run Details
+
+> *(Insert Screenshot Here)*
+
+![MLflow Run](docs/images/mlflow-run.png)
+
+---
+
+# 💻 Streamlit Application
+
+The application allows users to:
+
+- Choose a model
+- Enter customer information
+- Predict customer churn
+- View churn probability
+- View risk level
+- Compare model performance
+- Explore feature importance
+
+---
+
+# 📈 Feature Importance
+
+Random Forest feature importance is visualized inside Streamlit.
+
+Top influential features include:
+
+- Tenure
+- Contract Type
+- Monthly Charges
+- Total Charges
+- Internet Service
+
+> *(Insert Screenshot Here)*
+
+![Feature Importance](docs/images/feature-importance.png)
+
+---
+
+# 🧪 Testing
+
+Unit tests were written using **Pytest**.
+
+Covered:
+
+- Data Loading
+- Data Cleaning
+- Data Splitting
+- Preprocessing
+- Training
+- Evaluation
+- Hyperparameter Tuning
+- Model Saving
+
+Current Results
+
+```
+25 Passed
+```
+
+Coverage
+
+```
+89%
+```
+
+---
+
+### Test Coverage
+
+> *(Insert Screenshot Here)*
+
+![Coverage](docs/images/test-coverage.png)
+
+---
+
+# ✅ Code Quality
+
+The project follows Python best practices.
+
+Formatting
+
+```
+black .
+```
+
+Import Sorting
+
+```
+isort .
+```
+
+Linting
+
+```
+ruff check .
+```
+
+Testing
+
+```
+pytest --cov=src --cov-report=term-missing
+```
+
+---
+
+# 🐳 Docker
+
+A Dockerfile has been included for reproducible model training.
+
+Build
+
+```bash
+docker build -t customer-churn .
+```
+
+Run
+
+```bash
+docker run customer-churn
+```
+
+> **Note:** Docker image execution could not be verified locally due to corporate security restrictions on the development machine. The Dockerfile has been prepared according to standard Python project practices.
+
+---
+
+# ▶ Running the Project
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Train Models
+
+```bash
+python src/train.py
+```
+
+---
+
+## Hyperparameter Tuning
+
+```bash
+python src/tuning.py
+```
+
+---
+
+## Evaluate Models
+
+```bash
+python src/evaluate.py
+```
+
+---
+
+## Launch Streamlit
+
+```bash
+streamlit run app/app.py
+```
+
+---
+
+# 📦 Saved Models
+
+The following trained models are saved using Joblib.
+
+```
+best_logistic_model.pkl
+
+best_rf_model.pkl
+
+best_xgb_model.pkl
+```
+
+---
+
+# 🎯 Business Insights
+
+The trained models indicate that churn is strongly associated with:
+
+- Short customer tenure
+- Month-to-month contracts
+- High monthly charges
+- Fiber optic internet users
+- Lack of value-added services
+
+Recommendations:
+
+- Offer long-term contract discounts.
+- Improve onboarding for new customers.
+- Bundle security and support services.
+- Launch targeted retention campaigns.
+
+---
+
+# 🚀 Future Improvements
+
+Possible future enhancements include:
+
+- SHAP Explainability
+- LightGBM Model
+- FastAPI Deployment
+- CI/CD using GitHub Actions
+- Model Monitoring
+- Automated Retraining
+- Kubernetes Deployment
+- Cloud Deployment (AWS/Azure/GCP)
+
+---
+
+# 📚 References
+
+- IBM Telco Customer Churn Dataset
+- Scikit-learn Documentation
+- XGBoost Documentation
+- MLflow Documentation
+- Streamlit Documentation
+
+---
+
+# 👨‍💻 Author
+
+**Pratham Dubey**
+
+Production-Ready Customer Churn Prediction Pipeline
+
+Machine Learning Engineering & MLOps Project
+
+---
+
+# ⭐ Acknowledgements
+
+This project was developed as part of an **ML Engineering & MLOps learning program**, focusing on building reproducible, modular, and production-ready machine learning workflows using modern Python tools and best practices.

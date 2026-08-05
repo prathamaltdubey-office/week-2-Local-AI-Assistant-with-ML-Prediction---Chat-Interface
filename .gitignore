@@ -1,5 +1,47 @@
+# Python
 __pycache__/
-.ipynb_checkpoints/
-.DS_Store
-.env
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
 venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ruff
+.ruff_cache/
+
+# mypy (if used)
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# MLflow
+mlruns/
+mlflow.db

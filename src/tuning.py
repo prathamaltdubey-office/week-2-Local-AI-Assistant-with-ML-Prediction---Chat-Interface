@@ -1,425 +1,514 @@
-import pandas as pd
+"""
+Perform hyperparameter tuning for customer churn prediction models.
+
+This script loads the dataset, preprocesses the data,
+performs hyperparameter tuning for multiple machine
+learning models using RandomizedSearchCV, logs the
+results with MLflow, and saves the best models.
+"""
 
 import mlflow
 import mlflow.sklearn
-from mlflow.sklearn import SERIALIZATION_FORMAT_CLOUDPICKLE
-
+import pandas as pd
 from joblib import dump
-
-from sklearn.model_selection import (
-    train_test_split,
-    RandomizedSearchCV
-)
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-
+from mlflow.sklearn import SERIALIZATION_FORMAT_CLOUDPICKLE
 from sklearn.compose import ColumnTransformer
-
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import (
+    RandomizedSearchCV,
+    train_test_split,
+)
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
     OneHotEncoder,
-    StandardScaler
+    StandardScaler,
 )
-
-from sklearn.ensemble import RandomForestClassifier
-
 from xgboost import XGBClassifier
 
 mlflow.set_experiment("Customer Churn Prediction")
 
-df = pd.read_csv(
-    "./data/Telco_Customer_churn.csv"
-)
+
+def load_data() -> pd.DataFrame:
+    """
+    Load the Telco Customer Churn dataset.
+
+    Returns:
+        pd.DataFrame: Loaded dataset.
+    """
+
+    return pd.read_csv("./data/Telco_Customer_churn.csv")
 
 
-df = df.drop(
-    "customerID",
-    axis=1
-)
+def clean_data(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Clean and preprocess the dataset.
+
+    Args:
+        df: Raw customer churn dataset.
+
+    Returns:
+        pd.DataFrame: Cleaned dataset.
+    """
+
+    df = df.drop(
+        "customerID",
+        axis=1,
+    )
+
+    df["TotalCharges"] = pd.to_numeric(
+        df["TotalCharges"],
+        errors="coerce",
+    )
+
+    df["TotalCharges"] = df["TotalCharges"].fillna(0)
+
+    df["Churn"] = df["Churn"].map(
+        {
+            "Yes": 1,
+            "No": 0,
+        }
+    )
+
+    return df
 
 
-df["TotalCharges"] = pd.to_numeric(
-    df["TotalCharges"],
-    errors="coerce"
-)
+def split_data(
+    df: pd.DataFrame,
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.Series,
+    pd.Series,
+]:
+    """
+    Split dataset into train and test sets.
+    """
+
+    X = df.drop(
+        "Churn",
+        axis=1,
+    )
+
+    y = df["Churn"]
+
+    return train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
 
 
-df["TotalCharges"] = df["TotalCharges"].fillna(0)
+def create_preprocessor(
+    X_train: pd.DataFrame,
+) -> ColumnTransformer:
+    """
+    Create preprocessing pipeline.
+    """
 
+    categorical_columns = X_train.select_dtypes(include="object").columns
 
-df["Churn"] = df["Churn"].map(
-    {
-        "Yes":1,
-        "No":0
-    }
-)
+    numerical_columns = X_train.select_dtypes(exclude="object").columns
 
-
-
-X = df.drop(
-    "Churn",
-    axis=1
-)
-
-
-y = df["Churn"]
-
-
-
-X_train, X_test, y_train, y_test = train_test_split(
-
-    X,
-    y,
-
-    test_size=0.2,
-
-    random_state=42,
-
-    stratify=y
-)
-
-
-
-categorical_columns = X.select_dtypes(
-    include="object"
-).columns
-
-
-numerical_columns = X.select_dtypes(
-    exclude="object"
-).columns
-
-
-preprocessor = ColumnTransformer(
-
-    transformers=[
-
-        (
-            "cat",
-
-            OneHotEncoder(
-                handle_unknown="ignore"
+    return ColumnTransformer(
+        transformers=[
+            (
+                "cat",
+                OneHotEncoder(
+                    handle_unknown="ignore",
+                ),
+                categorical_columns,
             ),
+            (
+                "num",
+                StandardScaler(),
+                numerical_columns,
+            ),
+        ]
+    )
 
-            categorical_columns
-        ),
+
+def create_logistic_pipeline(
+    preprocessor: ColumnTransformer,
+) -> Pipeline:
+    """
+    Create Logistic Regression pipeline.
+    """
+
+    return Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                preprocessor,
+            ),
+            (
+                "model",
+                LogisticRegression(
+                    random_state=42,
+                    max_iter=1000,
+                ),
+            ),
+        ]
+    )
 
 
-        (
-            "num",
+def logistic_params() -> dict:
+    """
+    Logistic Regression parameter grid.
+    """
 
-            StandardScaler(),
+    return {
+        "model__C": [
+            0.001,
+            0.01,
+            0.1,
+            1,
+            10,
+            100,
+        ],
+        "model__solver": [
+            "liblinear",
+            "lbfgs",
+        ],
+        "model__penalty": [
+            "l2",
+        ],
+    }
 
-            numerical_columns
+
+def create_rf_pipeline(
+    preprocessor: ColumnTransformer,
+) -> Pipeline:
+    """
+    Create Random Forest pipeline.
+    """
+
+    return Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                preprocessor,
+            ),
+            (
+                "model",
+                RandomForestClassifier(
+                    random_state=42,
+                ),
+            ),
+        ]
+    )
+
+
+def rf_params() -> dict:
+    """
+    Random Forest parameter grid.
+    """
+
+    return {
+        "model__n_estimators": [
+            100,
+            200,
+            300,
+        ],
+        "model__max_depth": [
+            5,
+            10,
+            20,
+            None,
+        ],
+        "model__min_samples_split": [
+            2,
+            5,
+            10,
+        ],
+        "model__min_samples_leaf": [
+            1,
+            2,
+            4,
+        ],
+    }
+
+
+def create_xgb_pipeline(
+    preprocessor: ColumnTransformer,
+) -> Pipeline:
+    """
+    Create XGBoost pipeline.
+    """
+
+    return Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                preprocessor,
+            ),
+            (
+                "model",
+                XGBClassifier(
+                    random_state=42,
+                ),
+            ),
+        ]
+    )
+
+
+def xgb_params() -> dict:
+    """
+    XGBoost parameter grid.
+    """
+
+    return {
+        "model__n_estimators": [
+            100,
+            200,
+            300,
+        ],
+        "model__learning_rate": [
+            0.01,
+            0.05,
+            0.1,
+        ],
+        "model__max_depth": [
+            3,
+            5,
+            7,
+        ],
+        "model__subsample": [
+            0.7,
+            0.8,
+            1.0,
+        ],
+    }
+
+
+def tune_logistic(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    preprocessor: ColumnTransformer,
+) -> None:
+    """
+    Tune Logistic Regression model.
+
+    Args:
+        X_train: Training features.
+        y_train: Training labels.
+        preprocessor: Preprocessing pipeline.
+    """
+
+    pipeline = create_logistic_pipeline(preprocessor)
+
+    params = logistic_params()
+
+    search = RandomizedSearchCV(
+        estimator=pipeline,
+        param_distributions=params,
+        n_iter=10,
+        cv=5,
+        scoring="roc_auc",
+        random_state=42,
+        n_jobs=-1,
+    )
+
+    with mlflow.start_run(
+        run_name="Logistic Regression",
+    ):
+
+        search.fit(
+            X_train,
+            y_train,
         )
 
-    ]
+        print("Best Logistic Regression Parameters:")
 
-)
+        print(search.best_params_)
 
-logistic_pipeline = Pipeline(
+        mlflow.log_params(search.best_params_)
 
-    steps=[
-
-        (
-            "preprocessor",
-            preprocessor
-        ),
-
-        (
-            "model",
-            LogisticRegression(
-                max_iter=1000,
-                random_state=42
-            )
+        mlflow.log_metric(
+            "best_cv_score",
+            search.best_score_,
         )
 
-    ]
-
-)
-
-logistic_params = {
-
-    "model__C":
-
-    [
-        0.001,
-        0.01,
-        0.1,
-        1,
-        10,
-        100
-    ],
-
-
-    "model__solver":
-
-    [
-        "liblinear",
-        "lbfgs"
-    ],
-
-
-    "model__penalty":
-
-    [
-        "l2"
-    ]
-
-}
-
-logistic_search = RandomizedSearchCV(
-
-    estimator=logistic_pipeline,
-
-    param_distributions=logistic_params,
-
-    n_iter=10,
-
-    cv=5,
-
-    scoring="roc_auc",
-
-    random_state=42,
-
-    n_jobs=-1
-
-)
-
-
-with mlflow.start_run(run_name="Logistic Regression"):
-
-    logistic_search.fit(
-        X_train,
-        y_train
-    )
-
-    print("Best Logistic Regression Parameters:")
-    print(logistic_search.best_params_)
-
-    mlflow.log_params(logistic_search.best_params_)
-
-    mlflow.log_metric(
-        "best_cv_score",
-        logistic_search.best_score_
-    )
-
-    mlflow.sklearn.log_model(
-        sk_model=logistic_search.best_estimator_,
-        name="model",
-        serialization_format=SERIALIZATION_FORMAT_CLOUDPICKLE
-    )
-
-    dump(
-        logistic_search.best_estimator_,
-        "models/best_logistic_model.pkl"
-    )
-
-
-rf_pipeline = Pipeline(
-
-    steps=[
-
-        (
-            "preprocessor",
-            preprocessor
-        ),
-
-
-        (
-            "model",
-            RandomForestClassifier(
-                random_state=42
-            )
+        mlflow.sklearn.log_model(
+            sk_model=search.best_estimator_,
+            name="model",
+            serialization_format=SERIALIZATION_FORMAT_CLOUDPICKLE,
         )
 
-    ]
+        dump(
+            search.best_estimator_,
+            "models/best_logistic_model.pkl",
+        )
 
-)
-
-
-
-
-
-rf_params = {
+        print("Logistic Regression model saved.\n")
 
 
-    "model__n_estimators":
+def tune_random_forest(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    preprocessor: ColumnTransformer,
+) -> None:
+    """
+    Tune Random Forest model.
 
-    [100,200,300],
+    Args:
+        X_train: Training features.
+        y_train: Training labels.
+        preprocessor: Preprocessing pipeline.
+    """
+
+    pipeline = create_rf_pipeline(preprocessor)
+
+    params = rf_params()
+
+    search = RandomizedSearchCV(
+        estimator=pipeline,
+        param_distributions=params,
+        n_iter=10,
+        cv=5,
+        scoring="roc_auc",
+        random_state=42,
+        n_jobs=-1,
+    )
+
+    with mlflow.start_run(
+        run_name="Random Forest",
+    ):
+
+        search.fit(
+            X_train,
+            y_train,
+        )
+
+        print("Best Random Forest Parameters:")
+
+        print(search.best_params_)
+
+        mlflow.log_params(search.best_params_)
+
+        mlflow.log_metric(
+            "best_cv_score",
+            search.best_score_,
+        )
+
+        mlflow.sklearn.log_model(
+            sk_model=search.best_estimator_,
+            name="model",
+            serialization_format=SERIALIZATION_FORMAT_CLOUDPICKLE,
+        )
+
+        dump(
+            search.best_estimator_,
+            "models/best_rf_model.pkl",
+        )
+
+        print("Random Forest model saved.\n")
 
 
+def tune_xgboost(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    preprocessor: ColumnTransformer,
+) -> None:
+    """
+    Tune XGBoost model.
 
-    "model__max_depth":
+    Args:
+        X_train: Training features.
+        y_train: Training labels.
+        preprocessor: Preprocessing pipeline.
+    """
 
-    [5,10,20,None],
+    pipeline = create_xgb_pipeline(preprocessor)
+
+    params = xgb_params()
+
+    search = RandomizedSearchCV(
+        estimator=pipeline,
+        param_distributions=params,
+        n_iter=10,
+        cv=5,
+        scoring="roc_auc",
+        random_state=42,
+        n_jobs=-1,
+    )
+
+    with mlflow.start_run(
+        run_name="XGBoost",
+    ):
+
+        search.fit(
+            X_train,
+            y_train,
+        )
+
+        print("Best XGBoost Parameters:")
+
+        print(search.best_params_)
+
+        mlflow.log_params(search.best_params_)
+
+        mlflow.log_metric(
+            "best_cv_score",
+            search.best_score_,
+        )
+
+        mlflow.sklearn.log_model(
+            sk_model=search.best_estimator_,
+            name="model",
+            serialization_format=SERIALIZATION_FORMAT_CLOUDPICKLE,
+        )
+
+        dump(
+            search.best_estimator_,
+            "models/best_xgb_model.pkl",
+        )
+
+        print("XGBoost model saved.\n")
 
 
+def main() -> None:
+    """
+    Execute the complete hyperparameter tuning workflow.
+    """
 
-    "model__min_samples_split":
+    df = load_data()
 
-    [2,5,10],
+    df = clean_data(df)
 
-
-
-    "model__min_samples_leaf":
-
-    [1,2,4]
-
-
-}
-
-
-
-rf_search = RandomizedSearchCV(
-
-    estimator=rf_pipeline,
-
-    param_distributions=rf_params,
-
-    n_iter=10,
-
-    cv=5,
-
-    scoring="roc_auc",
-
-    random_state=42,
-
-    n_jobs=-1
-
-)
-
-
-
-with mlflow.start_run(run_name="Random Forest"):
-
-    rf_search.fit(
+    (
         X_train,
-        y_train
-    )
+        X_test,
+        y_train,
+        y_test,
+    ) = split_data(df)
 
-    print("Best Random Forest Parameters:")
-    print(rf_search.best_params_)
+    preprocessor = create_preprocessor(X_train)
 
-    mlflow.log_params(
-        rf_search.best_params_
-    )
-
-    mlflow.log_metric(
-        "best_cv_score",
-        rf_search.best_score_
-    )
-
-    mlflow.sklearn.log_model(
-        rf_search.best_estimator_,
-        name="model",
-        serialization_format="cloudpickle"
-    )
-
-    dump(
-        rf_search.best_estimator_,
-        "models/best_rf_model.pkl"
-    )
-
-
-
-xgb_pipeline = Pipeline(
-
-steps=[
-
-(
-"preprocessor",
-preprocessor
-),
-
-
-(
-"model",
-XGBClassifier(
-random_state=42
-)
-)
-
-]
-
-)
-
-
-xgb_params = {
-
-
-"model__n_estimators":
-
-[100,200,300],
-
-
-
-"model__learning_rate":
-
-[0.01,0.05,0.1],
-
-
-
-"model__max_depth":
-
-[3,5,7],
-
-
-
-"model__subsample":
-
-[0.7,0.8,1.0]
-
-
-}
-
-
-
-xgb_search = RandomizedSearchCV(
-
-    estimator=xgb_pipeline,
-
-    param_distributions=xgb_params,
-
-    n_iter=10,
-
-    cv=5,
-
-    scoring="roc_auc",
-
-    random_state=42,
-
-    n_jobs=-1
-
-)
-
-
-
-with mlflow.start_run(run_name="XGBoost"):
-
-    xgb_search.fit(
+    tune_logistic(
         X_train,
-        y_train
+        y_train,
+        preprocessor,
     )
 
-    print("Best XGBoost Parameters:")
-    print(xgb_search.best_params_)
-
-    mlflow.log_params(
-        xgb_search.best_params_
+    tune_random_forest(
+        X_train,
+        y_train,
+        preprocessor,
     )
 
-    mlflow.log_metric(
-        "best_cv_score",
-        xgb_search.best_score_
+    tune_xgboost(
+        X_train,
+        y_train,
+        preprocessor,
     )
 
-    mlflow.sklearn.log_model(
-        xgb_search.best_estimator_,
-        name="model",
-        serialization_format="cloudpickle"
-    )
+    print("\nHyperparameter tuning completed successfully!")
 
-    dump(
-        xgb_search.best_estimator_,
-        "models/best_xgb_model.pkl"
-    )
+
+if __name__ == "__main__":
+    main()
