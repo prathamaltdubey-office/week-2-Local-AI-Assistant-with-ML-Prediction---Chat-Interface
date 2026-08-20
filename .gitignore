@@ -39,9 +39,6 @@ build/
 dist/
 *.egg-info/
 
-# Logs
-*.log
-
 # MLflow
 mlruns/
 mlflow.db
