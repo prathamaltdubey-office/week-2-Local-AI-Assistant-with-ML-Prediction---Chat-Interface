@@ -15,3 +15,10 @@ black
 ruff
 isort
 pre-commit
+fastapi
+uvicorn
+pydantic
+langchain
+langchain-core
+langchain-ollama
+ollama
